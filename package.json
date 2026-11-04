@@ -25,7 +25,9 @@
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
     "@supabase/supabase-js": "^2.49.1",
-    "three": "^0.173.0"
+    "three": "^0.173.0",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
