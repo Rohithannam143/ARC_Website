@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "api": "tsx watch server/index.ts"
+    "api": "tsx watch server/index.ts",
+    "test": "npm run build"
   },
   "dependencies": {
     "@google/genai": "^1.11.0",
