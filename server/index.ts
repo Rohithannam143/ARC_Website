@@ -21,7 +21,8 @@ const compatibleBase=(process.env.AI_BASE_URL??'http://localhost:11434/v1').repl
 const compatibleKey=process.env.AI_API_KEY??'';
 const compatibleModel=process.env.AI_MODEL??'llama3.2';
 const isCompatible=provider==='openai-compatible';
-const aiConfigured=provider==='gemini'?Boolean(gemini):isCompatible?Boolean(compatibleBase):false;
+const compatibleIsLocal=/^(https?:\\/\\/)?(localhost|127\\.0\\.0\\.1|\\[::1\\])(:|\\/|$)/i.test(compatibleBase);
+const aiConfigured=provider==='gemini'?Boolean(gemini):isCompatible?Boolean(compatibleBase)&&(Boolean(compatibleKey)||compatibleIsLocal):false;
 const aiLimiter=rateLimit({windowMs:60_000,limit:20,standardHeaders:'draft-7',legacyHeaders:false,message:{error:'ARC has reached its request limit for this minute. Please wait and try again.'}});
 const schema=z.object({content:z.string().max(100000).default(''),prompt:z.string().max(4000).default('')});
 
