@@ -14,3 +14,5 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run build
+      - name: Type-check API server
+        run: npx tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --esModuleInterop --skipLibCheck --strict server/index.ts
