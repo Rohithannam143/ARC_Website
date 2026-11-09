@@ -20,7 +20,7 @@ ARC keeps provider credentials on the API server. Never put AI keys in Vite vari
 
 ## 3. Free AI choices and limits
 There is no legitimate hosted AI API key that is both free and unlimited. Free cloud services impose request/token quotas and can change them. Groq offers a free developer tier with published model-specific rate limits; Cloudflare Workers AI has a daily free allocation. Gemini also applies per-project RPM/TPM/RPD quotas. Check the provider's current dashboard before production use.
-For no per-request provider quota, run an open model locally with Ollama on hardware you control. This is limited by your device's RAM, CPU/GPU, speed and storage—not an unlimited hosted service. Do not expose an unauthenticated Ollama endpoint to the public internet.
+Example Groq settings: `AI_PROVIDER=openai-compatible`, `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI_API_KEY=<your Groq key>`, and `AI_MODEL=openai/gpt-oss-20b` (confirm the model is enabled for your account). Create your own key at [Groq Console](https://console.groq.com/keys). Groq's free tier is rate-limited; model-specific quotas are published in its [rate-limit documentation](https://console.groq.com/docs/rate-limits).\n\nFor no per-request provider quota, run an open model locally with Ollama on hardware you control. This is limited by your device's RAM, CPU/GPU, speed and storage—not an unlimited hosted service. Do not expose an unauthenticated Ollama endpoint to the public internet.
 
 ## 4. Health check and troubleshooting
 - Open `https://YOUR-API/api/health`. Check `ok`, `aiConfigured`, `aiProvider` and `aiModel`.
