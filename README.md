@@ -1,41 +1,39 @@
 # ARC — AI Knowledge Workspace
 
-ARC is a local-first knowledge workspace with a React/Vite web client and an Express/Gemini API. The repository includes deployment configuration for Vercel (frontend), Render (API), and Supabase (database foundation).
+ARC is a local-first knowledge workspace with a React/Vite web client, TipTap editor and Express AI API.
 
-## Current web features
-- React 19 + TypeScript + Vite workspace
-- Responsive notes UI with dark/light themes
-- Create, edit, search, favorite and delete notes
-- Browser-local autosave
-- TipTap rich-editor foundation and 3D graph foundation
-- Gemini note Q&A/summarization API (server-side key)
-- API health endpoint, request validation, rate limiting and Helmet
-- Supabase/PostgreSQL notes schema with row-level security (integration foundation)
-- PWA manifest/service-worker app-shell cache
+## Current capabilities
+- Responsive React 19 + TypeScript + Vite workspace
+- Dark/light themes, search, favorites and local autosave
+- TipTap rich-text editing foundation
+- 3D knowledge-map visualization foundation
+- AI note Q&A and summarization through Gemini or an OpenAI-compatible API
+- Server-side provider credentials, request validation, rate limiting and health diagnostics
+- Supabase/PostgreSQL schema with row-level security (cloud authentication and sync UI are not yet complete)
+- PWA manifest and service-worker app-shell cache
 
-## Deploy
+## AI provider setup
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). Provider keys belong only on the API server, never in `VITE_*` variables.
 
-Follow [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for step-by-step Vercel + Render + Supabase setup.
+- Gemini: `AI_PROVIDER=gemini` + `GEMINI_API_KEY`.
+- OpenAI-compatible: `AI_PROVIDER=openai-compatible` + `AI_BASE_URL`, optional `AI_API_KEY`, and `AI_MODEL`.
+- Local Ollama: run Ollama on the same machine as the API and use `http://localhost:11434/v1`.
 
-- Vercel frontend: `npm run build`, output `dist`, set `VITE_API_URL` to the Render API origin.
-- Render API: `npm install`, `npm run start:api`; set `GEMINI_API_KEY` and `CLIENT_ORIGIN` in Render's environment settings.
-- Supabase: run `database/schema.sql` in the SQL Editor.
+No hosted free API offers guaranteed unlimited usage. Local inference avoids per-request cloud charges but is bounded by your hardware.
 
-## Local development
-
+## Development
 ```bash
 npm install
 cp .env.example .env
 npm run api
-# In another terminal:
+# in another terminal
 npm run dev
 ```
 
 ## Honest implementation status
-
-The web build is configured for deployment, but ARC is not yet a production-complete knowledge-management product. Notes currently persist in the browser's localStorage. Supabase schema/helpers exist, but authentication and UI-driven cloud sync are not wired. The graph is a visual foundation rather than a graph derived from backlinks. Import/export, revision history, robust offline conflict resolution, full mobile clients, and end-to-end tests remain future work.
+Notes currently persist in browser localStorage. Supabase schema/helpers are foundations; authentication and UI-driven cloud sync are not yet wired. The graph is a visual foundation rather than a backlink-derived graph. Import/export, revision history, robust offline conflict resolution, full mobile clients and end-to-end tests remain unfinished.
 
 ## Security
-- Never commit `.env`.
-- Keep `GEMINI_API_KEY` and Supabase service-role keys on trusted servers only.
-- Rotate any credential exposed in chat or source control.
+- Never commit `.env` or provider credentials.
+- Rotate keys exposed in chat or source control.
+- Do not expose a local Ollama server publicly without authentication and network controls.
