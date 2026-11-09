@@ -1,65 +1,40 @@
 # ARC production deployment (Vercel + Render + Supabase)
 
-This repository is prepared for a split deployment:
-- **Vercel** serves the Vite frontend from `dist`.
-- **Render** runs the Express API from `server/index.ts`.
-- **Supabase** provides the PostgreSQL schema and future authentication/cloud storage.
+ARC keeps provider credentials on the API server. Never put AI keys in Vite variables or commit them.
 
-> Important: the current notes UI still saves to browser localStorage. Supabase helpers/schema are present, but sign-in and UI-driven cloud sync have not been implemented. Deploying Supabase does not automatically turn on cross-device sync.
+## 1. Frontend on Vercel
+- Import `Rohithannam143/ARC_Website`, choose Vite, root directory `./`.
+- Build: `npm run build`; output: `dist`.
+- Set `VITE_API_URL` to the public API service origin (no trailing slash).
+- Set Supabase public URL/anon key only after enabling the cloud-sync UI.
+- Deploy and note the exact Vercel origin.
 
-## 1. Push and deploy the frontend on Vercel
+## 2. API on Render
+- Create a Web Service from this repository. Build with `npm install`; start with `npm run start:api`.
+- Set `CLIENT_ORIGIN` to the exact Vercel origin.
+- Set one AI provider:
+  - Gemini: `AI_PROVIDER=gemini`, `GEMINI_API_KEY`, and optional `GEMINI_MODEL`.
+  - Any OpenAI-compatible API: `AI_PROVIDER=openai-compatible`, `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL`.
+- For local Ollama on the same machine as the API, use `AI_BASE_URL=http://localhost:11434/v1`, an installed model name in `AI_MODEL`, and leave `AI_API_KEY` blank. A cloud-hosted Render API cannot reach Ollama running on your personal PC at localhost; use a securely hosted endpoint or run the API and Ollama on the same machine.
+- Render provides `PORT`; do not hardcode it.
 
-1. Sign in to Vercel and import `Rohithannam143/ARC_Website`.
-2. Select the `main` branch. Framework preset: **Vite**. Root directory: `./`.
-3. Build command: `npm run build`; output directory: `dist`; install command: `npm install`.
-4. Add environment variable `VITE_API_URL` with the public Render API origin, for example `https://arc-api.onrender.com` (no trailing slash).
-5. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` only if using the Supabase client. These are public client settings; never use a service-role key in Vercel frontend variables.
-6. Deploy. Copy the resulting Vercel origin, e.g. `https://arc-website.vercel.app`.
+## 3. Free AI choices and limits
+There is no legitimate hosted AI API key that is both free and unlimited. Free cloud services impose request/token quotas and can change them. Groq offers a free developer tier with published model-specific rate limits; Cloudflare Workers AI has a daily free allocation. Gemini also applies per-project RPM/TPM/RPD quotas. Check the provider's current dashboard before production use.
+Example Groq settings: `AI_PROVIDER=openai-compatible`, `AI_BASE_URL=https://api.groq.com/openai/v1`, `AI_API_KEY=<your Groq key>`, and `AI_MODEL=openai/gpt-oss-20b` (confirm the model is enabled for your account). Create your own key at [Groq Console](https://console.groq.com/keys). Groq's free tier is rate-limited; model-specific quotas are published in its [rate-limit documentation](https://console.groq.com/docs/rate-limits).\n\nFor no per-request provider quota, run an open model locally with Ollama on hardware you control. This is limited by your device's RAM, CPU/GPU, speed and storage—not an unlimited hosted service. Do not expose an unauthenticated Ollama endpoint to the public internet.
 
-The included `vercel.json` configures SPA fallback routing.
+## 4. Health check and troubleshooting
+- Open `https://YOUR-API/api/health`. Check `ok`, `aiConfigured`, `aiProvider` and `aiModel`.
+- 401/403: provider key missing, invalid or unauthorized.
+- 429: provider quota/rate limit reached; wait or switch provider.
+- 502 connection error: verify `AI_BASE_URL`, model name, provider availability and server logs.
+- 504: upstream timed out; retry with a shorter note.
+- If using Gemini, verify the API key belongs to the intended Google AI Studio project and inspect that project's active quotas.
 
-## 2. Deploy the API on Render
+## 5. Supabase status
+The notes screen currently persists locally in the browser. SQL schema and helper functions exist, but the production sign-in and conflict-safe sync workflow are not yet wired. Do not treat cloud sync as enabled until it is implemented and tested.
 
-1. Create a **New Web Service** and connect the same GitHub repository.
-2. Use the repository root. The included `render.yaml` sets Node 22, build command, start command, and health check.
-3. Set the following environment variables in Render:
-   - `GEMINI_API_KEY`: a newly generated Gemini key (keep it secret; never commit it).
-   - `GEMINI_MODEL`: `gemini-2.5-flash` unless you choose another supported model.
-   - `CLIENT_ORIGIN`: exact Vercel production origin, e.g. `https://arc-website.vercel.app`. For Vercel preview domains, add each permitted origin comma-separated if you intend to allow them.
-   - `PORT`: Render supplies this automatically; leave it unset unless required.
-4. Deploy and wait for the service to become healthy.
-5. Verify `https://YOUR-RENDER-SERVICE.onrender.com/api/health`. Expected JSON includes `ok: true` and `aiConfigured: true` once the key is configured.
-
-After first deployment, if the Vercel URL changes, update Render's `CLIENT_ORIGIN` and redeploy/restart the API.
-
-## 3. Connect the frontend to the API
-
-In Vercel project settings, set `VITE_API_URL` to the Render service origin (no trailing slash), then redeploy the frontend. The app uses the Vite proxy automatically in local development when this variable is blank.
-
-## 4. Prepare Supabase
-
-1. Create a Supabase project.
-2. Run `database/schema.sql` in the Supabase SQL Editor.
-3. Configure Auth providers and redirect URLs if/when the app's authentication UI is implemented.
-4. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Vercel only when the frontend integration is ready.
-5. Keep the Supabase service-role key private; it is not needed by the current browser-only notes implementation.
-
-**Current limitation:** the schema and `src/lib/cloudNotes.ts` helper are foundations only. Do not advertise cloud sync as available until authentication, sync UI, and conflict handling are implemented and tested.
-
-## 5. Post-deployment smoke tests
-
-- Open the Vercel URL over HTTPS.
-- Open `/api/health` on the Render URL; confirm `ok: true`.
-- In the ARC UI, ask the AI assistant a simple question; confirm a response and inspect browser console/network for CORS errors.
-- Create/edit/delete a note, refresh, and confirm local browser persistence.
-- Test a second browser/device to confirm the known limitation: notes do not sync between devices yet.
-- Check Render logs for Gemini errors and verify no secrets are printed.
-
-## Security and operational notes
-
-- Rotate any API key that has been pasted into chat, source control, or another public location. Use a fresh key in Render's secret environment variables.
-- Never commit `.env`, Gemini API keys, or Supabase service-role keys.
-- CORS must contain the exact Vercel origin. Avoid wildcard origins for production.
-- The API has Helmet headers, JSON size limits, request validation, and a basic AI rate limit. Add stronger abuse protection/monitoring before broad public launch.
-- Render free instances may sleep when idle; the first request after inactivity can be slow.
-- A successful Vite build is not a full production QA or security audit.
+## Security
+- Keep `GEMINI_API_KEY` and `AI_API_KEY` only in the API host's secret environment.
+- Rotate any key exposed in chat, logs or Git.
+- Do not use a Supabase service-role key in a browser.
+- The API applies a per-IP request limiter. Add authenticated user quotas and abuse monitoring before opening it publicly.
